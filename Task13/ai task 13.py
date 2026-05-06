@@ -1,0 +1,82 @@
+import pickle
+from sklearn.ensemble import RandomForestClassifier
+
+# model banana aur train karna
+rf = RandomForestClassifier()
+rf.fit(X_train, y_train)
+
+# file me save karna
+file = open("model.pkl", "wb")
+pickle.dump(rf, file)
+file.close()
+
+print("Model save ho gaya")
+from flask import Flask, render_template, request
+import pickle
+import numpy as np
+
+app = Flask(__name__)
+
+# model load karna
+f = open("model.pkl", "rb")
+model = pickle.load(f)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/predict", methods=["POST"])
+def get_prediction():
+    
+    try:
+        # form se data lena
+        data = request.form.values()
+        
+        # float me convert karna
+        vals = []
+        for i in data:
+            vals.append(float(i))
+        
+        final = np.array([vals])
+
+        result = model.predict(final)
+
+        if result[0] == 1:
+            msg = "Survived"
+        else:
+            msg = "Not Survived"
+
+        return render_template("index.html", prediction_text="Result: " + msg)
+
+    except:
+        return render_template("index.html", prediction_text="Invalid input")
+
+if __name__ == "__main__":
+    app.run(debug=True)
+    <!DOCTYPE html>
+<html>
+<head>
+    <title>Titanic Prediction</title>
+</head>
+
+<body style="text-align:center; font-family:Arial; background:#eee;">
+
+    <h2>Titanic Survival</h2>
+
+    <form action="/predict" method="post" 
+          style="background:white; padding:20px; width:280px; margin:auto; border-radius:8px;">
+
+        <input type="text" name="Pclass" placeholder="Pclass"><br><br>
+        <input type="text" name="Sex" placeholder="Sex (0/1)"><br><br>
+        <input type="text" name="Age" placeholder="Age"><br><br>
+        <input type="text" name="SibSp" placeholder="Siblings"><br><br>
+        <input type="text" name="Parch" placeholder="Parents"><br><br>
+        <input type="text" name="Fare" placeholder="Fare"><br><br>
+
+        <button type="submit">Check</button>
+    </form>
+
+    <h3>{{ prediction_text }}</h3>
+
+</body>
+</html>
